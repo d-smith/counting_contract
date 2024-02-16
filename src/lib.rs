@@ -4,24 +4,28 @@ use cosmwasm_std::{
 
 mod contract;
 pub mod msg;
+mod state;
+
+use state::COUNTER;
 
 #[entry_point]
 pub fn instantiate(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
     _msg: Empty,
 ) -> StdResult<Response> {
+    COUNTER.save(deps.storage, &0)?;
     Ok(Response::new())
 }
 
 #[entry_point]
-pub fn query(_deps: Deps, _env: Env, msg: msg::QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: msg::QueryMsg) -> StdResult<Binary> {
     use contract::query;
     use msg::QueryMsg::*;
 
     match msg {
-        Value {} => to_binary(&query::value()),
+        Value {} => to_binary(&query::value(deps)?),
         Incremented { value } => to_binary(&query::incremented(value)),
     }
 }
