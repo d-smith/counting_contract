@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Empty, Env, MessageInfo, Response, StdResult,
 };
+use msg::InstantiateMsg;
 
 mod contract;
 pub mod msg;
@@ -13,10 +14,9 @@ pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    _msg: Empty,
+    msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    COUNTER.save(deps.storage, &0)?;
-    Ok(Response::new())
+    contract::instantiate(deps, msg.counter)
 }
 
 #[entry_point]
@@ -30,18 +30,27 @@ pub fn query(deps: Deps, _env: Env, msg: msg::QueryMsg) -> StdResult<Binary> {
     }
 }
 
-// Also need to add the execute entry point to use multitest
 #[entry_point]
-pub fn execute(_deps: DepsMut, _env: Env, _info: MessageInfo, _msg: Empty) -> StdResult<Response> {
-    Ok(Response::new())
+pub fn execute(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: msg::ExecMsg,
+) -> StdResult<Response> {
+    use contract::exec;
+    use msg::ExecMsg::*;
+
+    match msg {
+        Poke {} => exec::poke(deps, info),
+    }
 }
 
 #[cfg(test)]
-mod test {
+mod test {    
     use cosmwasm_std::{Addr, Empty};
     use cw_multi_test::{App, Contract, ContractWrapper, Executor};
 
-    use crate::msg::{QueryMsg, ValueResp};
+    use crate::msg::{ExecMsg, InstantiateMsg,QueryMsg, ValueResp};
     use crate::{execute, instantiate, query};
 
     fn counting_contract() -> Box<dyn Contract<Empty>> {
@@ -97,5 +106,38 @@ mod test {
             .unwrap();
 
         assert_eq!(resp, ValueResp { value: 2 });
+    }
+
+    #[test]
+    fn poke() {
+        let mut app = App::default();
+
+        let contract_id = app.store_code(counting_contract());
+
+        let contract_addr = app
+            .instantiate_contract(
+                contract_id,
+                Addr::unchecked("sender"),
+                &InstantiateMsg { counter: 0 },
+                &[],
+                "Counting contract",
+                None,
+            )
+            .unwrap();
+
+        app.execute_contract(
+            Addr::unchecked("sender"),
+            contract_addr.clone(),
+            &ExecMsg::Poke {},
+            &[],
+        )
+        .unwrap();
+
+        let resp: ValueResp = app
+            .wrap()
+            .query_wasm_smart(contract_addr, &QueryMsg::Value {})
+            .unwrap();
+
+        assert_eq!(resp, ValueResp { value: 1 });
     }
 }
