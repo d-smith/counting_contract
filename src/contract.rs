@@ -23,9 +23,7 @@ pub mod query {
         Ok(ValueResp { value })
     }
 
-    pub fn incremented(value: u64) -> ValueResp {
-        ValueResp { value: value + 1 }
-    }
+    
 
 }
 

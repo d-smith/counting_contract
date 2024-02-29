@@ -36,7 +36,6 @@ pub fn query(deps: Deps, _env: Env, msg: msg::QueryMsg) -> StdResult<Binary> {
 
     match msg {
         Value {} => to_json_binary(&query::value(deps)?),
-        Incremented { value } => to_json_binary(&query::incremented(value)),
     }
 }
 
@@ -98,33 +97,8 @@ mod test {
         assert_eq!(resp, ValueResp { value: 7 });
     }
 
-    #[test]
-    fn query_incremented() {
-        let mut app = App::default();
-
-        let contract_id = app.store_code(counting_contract());
-
-        let contract_addr = app
-            .instantiate_contract(
-                contract_id,
-                Addr::unchecked("sender"),
-                &InstantiateMsg {
-                    counter: 10,
-                    minimal_donation: coin(10, "atom"),
-                },
-                &[],
-                "Counting contract",
-                None,
-            )
-            .unwrap();
-
-        let resp: ValueResp = app
-            .wrap()
-            .query_wasm_smart(contract_addr, &QueryMsg::Incremented { value: 1 })
-            .unwrap();
-
-        assert_eq!(resp, ValueResp { value: 2 });
-    }
+    
+    
     
 
     #[test]
