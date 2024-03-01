@@ -1,6 +1,5 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Coin;
-use cosmwasm_schema::cw_serde;
-use cosmwasm_schema::QueryResponses;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -9,28 +8,29 @@ pub struct InstantiateMsg {
     pub minimal_donation: Coin,
 }
 
- 
-
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
     #[returns(ValueResp)]
     Value {},
 }
- 
 
 #[cw_serde]
-pub struct ValueResp {
-    pub value: u64,
-}
-
-
-
-#[cw_serde]pub enum ExecMsg {
+pub enum ExecMsg {
     Donate {},
     Reset {
         #[serde(default)]
         counter: u64,
     },
     Withdraw {},
+    WithdrawTo {
+        receiver: String,
+        #[serde(default)]
+        funds: Vec<Coin>,
+    },
+}
+
+#[cw_serde]
+pub struct ValueResp {
+    pub value: u64,
 }
